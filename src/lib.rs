@@ -409,7 +409,7 @@ const INITIALIZED: usize = 2;
 
 static MAX_LOG_LEVEL_FILTER: AtomicUsize = AtomicUsize::new(0);
 
-static LOG_LEVEL_NAMES: [&str; 6] = ["OFF", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"];
+static LOG_LEVEL_NAMES: [&str; 7] = ["OFF", "FATAL", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"];
 
 static SET_LOGGER_ERROR: &str = "attempted to set a logger after the logging system \
                                  was already initialized";
@@ -425,13 +425,18 @@ static LEVEL_PARSE_ERROR: &str =
 #[repr(usize)]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, Hash)]
 pub enum Level {
-    /// The "error" level.
+    /// The "fatal" level.
     ///
-    /// Designates very serious errors.
+    /// Designates a potentically irrecoverable error.
     // This way these line up with the discriminants for LevelFilter below
     // This works because Rust treats field-less enums the same way as C does:
     // https://doc.rust-lang.org/reference/items/enumerations.html#custom-discriminant-values-for-field-less-enumerations
-    Error = 1,
+
+    Fatal = 1,
+    /// The "error" level.
+    ///
+    /// Designates very serious errors.
+    Error,
     /// The "warn" level.
     ///
     /// Designates hazardous situations.
@@ -496,11 +501,12 @@ impl fmt::Display for Level {
 impl Level {
     fn from_usize(u: usize) -> Option<Level> {
         match u {
-            1 => Some(Level::Error),
-            2 => Some(Level::Warn),
-            3 => Some(Level::Info),
-            4 => Some(Level::Debug),
-            5 => Some(Level::Trace),
+            1 => Some(Level::Fatal),
+            2 => Some(Level::Error),
+            3 => Some(Level::Warn),
+            4 => Some(Level::Info),
+            5 => Some(Level::Debug),
+            6 => Some(Level::Trace),
             _ => None,
         }
     }
@@ -556,6 +562,8 @@ impl Level {
 pub enum LevelFilter {
     /// A level lower than all log levels.
     Off,
+    /// Corresponds to the `Fatal` log level.
+    Fatal,
     /// Corresponds to the `Error` log level.
     Error,
     /// Corresponds to the `Warn` log level.
@@ -605,11 +613,12 @@ impl LevelFilter {
     fn from_usize(u: usize) -> Option<LevelFilter> {
         match u {
             0 => Some(LevelFilter::Off),
-            1 => Some(LevelFilter::Error),
-            2 => Some(LevelFilter::Warn),
-            3 => Some(LevelFilter::Info),
-            4 => Some(LevelFilter::Debug),
-            5 => Some(LevelFilter::Trace),
+            1 => Some(LevelFilter::Fatal),
+            2 => Some(LevelFilter::Error),
+            3 => Some(LevelFilter::Warn),
+            4 => Some(LevelFilter::Info),
+            5 => Some(LevelFilter::Debug),
+            6 => Some(LevelFilter::Trace),
             _ => None,
         }
     }
@@ -1258,6 +1267,7 @@ pub unsafe fn set_max_level_racy(level: LevelFilter) {
 /// log level is set by the [`set_max_level`] function.
 ///
 /// [`log!`]: macro.log.html
+/// [`fatal!]: macro.fatal.html
 /// [`error!`]: macro.error.html
 /// [`warn!`]: macro.warn.html
 /// [`info!`]: macro.info.html
@@ -1316,7 +1326,7 @@ pub fn set_boxed_logger(logger: Box<dyn Log>) -> Result<(), SetLoggerError> {
 /// # Examples
 ///
 /// ```edition2018
-/// use log::{error, info, warn, Record, Level, Metadata, LevelFilter};
+/// use log::{fatal, error, info, warn, Record, Level, Metadata, LevelFilter};
 ///
 /// static MY_LOGGER: MyLogger = MyLogger;
 ///

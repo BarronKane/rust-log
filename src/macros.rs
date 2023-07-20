@@ -59,6 +59,30 @@ macro_rules! log {
     ($lvl:expr, $($arg:tt)+) => ($crate::log!(target: $crate::__private_api::module_path!(), $lvl, $($arg)+));
 }
 
+/// Logs a message at the fatal level.
+///
+/// # Examples
+///
+/// ```edition2018
+/// use log::fatal;
+///
+/// # fn main() {
+/// let (err_info, port) = ("No connection", 22);
+///
+/// error!("Error: {} on port {}", err_info, port);
+/// error!(target: "app_events", "App Error: {}, Port: {}", err_info, 22);
+/// # }
+/// ```
+#[macro_export]
+macro_rules! fatal {
+    // error!(target: "my_target", key1 = 42, key2 = true; "a {} event", "log")
+    // error!(target: "my_target", "a {} event", "log")
+    (target: $target:expr, $($arg:tt)+) => ($crate::log!(target: $target, $crate::Level::Fatal, $($arg)+));
+
+    // error!("a {} event", "log")
+    ($($arg:tt)+) => ($crate::log!($crate::Level::Fatal, $($arg)+))
+}
+
 /// Logs a message at the error level.
 ///
 /// # Examples
